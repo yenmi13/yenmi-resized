@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>線上圖片尺寸調整工具 - 16bit版</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --pixel-bg: #000000;
+            --pixel-fg: #FFFFFF;
+            --pixel-border-size: 4px;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background-color: var(--pixel-bg);
+            color: var(--pixel-fg);
+            font-size: 20px;
+            padding: 1rem;
+        }
+
+        * {
+            box-sizing: border-box;
+            border-radius: 0 !important;
+        }
+        
+        .pixel-container {
+            max-width: 1200px;
+            margin: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .pixel-header {
+            text-align: center;
+            border: var(--pixel-border-size) solid var(--pixel-fg);
+            padding: 1rem;
+            box-shadow: inset 0 0 0 var(--pixel-border-size) var(--pixel-bg), 0 0 0 var(--pixel-border-size) var(--pixel-fg);
+        }
+
+        .pixel-header h1 {
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .pixel-main {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        @media (min-width: 1024px) {
+            .pixel-main {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+
+        .pixel-box {
+            border: var(--pixel-border-size) solid var(--pixel-fg);
+            padding: 1.5rem;
+            background-color: var(--pixel-bg);
+        }
+
+        .upload-box {
+            width: 100%;
+            height: 24rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            border: var(--pixel-border-size) dashed var(--pixel-fg);
+            transition: background-color 0.2s;
+        }
+        .upload-box:hover {
+            background-color: #222;
+        }
+        #image-preview {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated; /* Makes resized previews look sharp */
+        }
+        #image-info {
+            text-align: center;
+            margin-top: 1rem;
+            height: 20px;
+        }
+
+        .controls-fieldset {
+            border: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .controls-fieldset:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            filter: grayscale(50%);
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            font-family: 'VT323', monospace;
+            background-color: var(--pixel-bg);
+            color: var(--pixel-fg);
+            border: var(--pixel-border-size) solid var(--pixel-fg);
+            padding: 0.5rem;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+            text-transform: uppercase;
+            box-shadow: inset 0 0 0 0 var(--pixel-fg);
+            transition: all 0.1s linear;
+        }
+        .btn:hover:not(:disabled) {
+            background-color: var(--pixel-fg);
+            color: var(--pixel-bg);
+        }
+        .btn:active:not(:disabled) {
+            transform: translateY(2px);
+        }
+        .btn:disabled {
+            cursor: not-allowed;
+        }
+        
+        .pixel-input, .pixel-select {
+            width: 100%;
+            background-color: var(--pixel-bg);
+            color: var(--pixel-fg);
+            border: var(--pixel-border-size) solid var(--pixel-fg);
+            padding: 0.5rem;
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+        }
+        
+        .dimension-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .dimension-group .pixel-input {
+            text-align: center;
+        }
+
+        #aspect-ratio-lock {
+            width: 48px;
+            height: 48px;
+            flex-shrink: 0;
+            padding: 4px;
+        }
+        #aspect-ratio-lock svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--pixel-fg);
+        }
+        #aspect-ratio-lock.locked {
+             background-color: var(--pixel-fg);
+        }
+        #aspect-ratio-lock.locked svg {
+             stroke: var(--pixel-bg);
+        }
+
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: var(--pixel-border-size);
+            background: var(--pixel-fg);
+            outline: none;
+            padding: 0;
+            margin: 0.5rem 0;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--pixel-bg);
+            border: var(--pixel-border-size) solid var(--pixel-fg);
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px; /* (24px - 2*4px) */
+            height: 16px;
+            background: var(--pixel-bg);
+            border: var(--pixel-border-size) solid var(--pixel-fg);
+            cursor: pointer;
+        }
+        .slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 16px;
+        }
+        
+        #export-button {
+            padding: 1rem;
+            font-size: 22px;
+            font-weight: bold;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="pixel-container">
+        <header class="pixel-header">
+            <h1>Image Resizer</h1>
+            <p>-- y2k pixel edition --</p>
+        </header>
+
+        <main class="pixel-main">
+            <div class="image-area">
+                <div id="image-preview-container" class="upload-box">
+                    <div id="upload-prompt">
+                        <p>CLICK OR DROP IMAGE HERE</p>
+                        <p style="font-size: 14px;">[NO UPLOAD, ALL LOCAL]</p>
+                    </div>
+                    <img id="image-preview" src="" class="hidden" alt="圖片預覽"/>
+                </div>
+                <input type="file" id="file-input" class="hidden" accept="image/*">
+                <div id="image-info"></div>
+            </div>
+
+            <div class="control-panel pixel-box">
+                <fieldset id="controls-fieldset" class="controls-fieldset" disabled>
+                    
+                    <div class="control-group">
+                        <label>PRESETS</label>
+                        <div class="btn-group">
+                            <button onclick="setPresetSize(1200, 630)" class="btn">FB POST</button>
+                            <button onclick="setPresetSize(1080, 1080)" class="btn">IG POST</button>
+                            <button onclick="setPresetSize(1080, 1920)" class="btn">IG STORY</button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>CUSTOM SIZE</label>
+                        <div class="dimension-group">
+                            <input type="number" id="width-input" class="pixel-input" placeholder="W">
+                            <span>X</span>
+                            <input type="number" id="height-input" class="pixel-input" placeholder="H">
+                            <button id="aspect-ratio-lock" class="btn">
+                                <!-- Pixel Lock/Unlock Icon -->
+                                <svg id="lock-icon" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter" shape-rendering="crispEdges">
+                                    <rect x="5" y="11" width="14" height="9"></rect>
+                                    <path d="M8 11V7a4 4 0 014-4 4 4 0 014 4v4"></path>
+                                </svg>
+                                <svg id="unlock-icon" class="hidden" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter" shape-rendering="crispEdges">
+                                     <rect x="5" y="11" width="14" height="9"></rect>
+                                     <path d="M8 11V7a4 4 0 014-4 4 4 0 014 4"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="format-select">FORMAT</label>
+                        <select id="format-select" class="pixel-select">
+                            <option value="jpeg">JPG</option>
+                            <option value="png">PNG</option>
+                        </select>
+                    </div>
+
+                    <div id="size-control" class="control-group">
+                        <label for="size-slider">TARGET FILE SIZE (JPG ONLY)</label>
+                        <input id="size-slider" type="range" min="100" max="1000" value="500">
+                        <div class="slider-labels">
+                           <span>100KB</span>
+                           <span>TARGET: <span id="size-value">500</span> KB</span>
+                           <span>1000KB</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <button id="export-button" class="btn">EXPORT IMAGE</button>
+                    </div>
+                </fieldset>
+                 <button id="reset-button" class="btn hidden" style="margin-top: 1rem; width: 100%;">RESET</button>
+            </div>
+        </main>
+    </div>
+
+    <canvas id="canvas" class="hidden"></canvas>
+    <a id="download-link" class="hidden"></a>
+
+    <script>
+        // --- 功能完全保持不變，只更動樣式相關的class切換 ---
+        // DOM Elements
+        const fileInput = document.getElementById('file-input');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const imagePreview = document.getElementById('image-preview');
+        const imageInfo = document.getElementById('image-info');
+        const controlsFieldset = document.getElementById('controls-fieldset');
+        
+        const widthInput = document.getElementById('width-input');
+        const heightInput = document.getElementById('height-input');
+        const aspectRatioLock = document.getElementById('aspect-ratio-lock');
+        const lockIcon = document.getElementById('lock-icon');
+        const unlockIcon = document.getElementById('unlock-icon');
+        
+        const formatSelect = document.getElementById('format-select');
+        const sizeControl = document.getElementById('size-control');
+        const sizeSlider = document.getElementById('size-slider');
+        const sizeValue = document.getElementById('size-value');
+        
+        const exportButton = document.getElementById('export-button');
+        const resetButton = document.getElementById('reset-button');
+        const downloadLink = document.getElementById('download-link');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // State
+        let originalImage = null;
+        let originalWidth = 0;
+        let originalHeight = 0;
+        let aspectRatio = 1;
+        let isAspectRatioLocked = true;
+
+        // --- Event Listeners ---
+        imagePreviewContainer.addEventListener('click', () => fileInput.click());
+        imagePreviewContainer.addEventListener('dragover', (e) => { e.preventDefault(); });
+        imagePreviewContainer.addEventListener('dragleave', (e) => { e.preventDefault(); });
+        imagePreviewContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFile(files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFile(e.target.files[0]);
+        });
+        widthInput.addEventListener('input', () => {
+            if (isAspectRatioLocked && originalImage) {
+                const newWidth = parseInt(widthInput.value, 10);
+                if (!isNaN(newWidth) && newWidth > 0) {
+                    heightInput.value = Math.round(newWidth / aspectRatio);
+                }
+            }
+        });
+        heightInput.addEventListener('input', () => {
+            if (isAspectRatioLocked && originalImage) {
+                const newHeight = parseInt(heightInput.value, 10);
+                if (!isNaN(newHeight) && newHeight > 0) {
+                    widthInput.value = Math.round(newHeight * aspectRatio);
+                }
+            }
+        });
+        aspectRatioLock.addEventListener('click', () => {
+            isAspectRatioLocked = !isAspectRatioLocked;
+            updateLockIcon();
+        });
+        formatSelect.addEventListener('change', () => {
+            sizeControl.style.display = formatSelect.value === 'jpeg' ? 'block' : 'none';
+        });
+        sizeSlider.addEventListener('input', () => {
+            sizeValue.textContent = sizeSlider.value;
+        });
+        exportButton.addEventListener('click', exportImage);
+        resetButton.addEventListener('click', resetAll);
+
+        // --- Functions ---
+        function dataURLtoBlob(dataurl) {
+            const arr = dataurl.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) { u8arr[n] = bstr.charCodeAt(n); }
+            return new Blob([u8arr], { type: mime });
+        }
+
+        function handleFile(file) {
+            if (!file.type.startsWith('image/')) { alert('PLEASE SELECT AN IMAGE FILE!'); return; }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                originalImage = new Image();
+                originalImage.onload = () => {
+                    originalWidth = originalImage.width;
+                    originalHeight = originalImage.height;
+                    aspectRatio = originalWidth / originalHeight;
+                    imagePreview.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                    uploadPrompt.classList.add('hidden');
+                    controlsFieldset.disabled = false;
+                    resetButton.classList.remove('hidden');
+                    widthInput.value = originalWidth;
+                    heightInput.value = originalHeight;
+                    imageInfo.textContent = `Original: ${originalWidth}x${originalHeight}px`;
+                };
+                originalImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateLockIcon() {
+            if (isAspectRatioLocked) {
+                lockIcon.classList.remove('hidden');
+                unlockIcon.classList.add('hidden');
+                aspectRatioLock.classList.add('locked');
+                if (originalImage) {
+                    aspectRatio = originalWidth / originalHeight;
+                    const currentWidth = parseInt(widthInput.value, 10);
+                    if (!isNaN(currentWidth)) {
+                       heightInput.value = Math.round(currentWidth / aspectRatio);
+                    }
+                }
+            } else {
+                lockIcon.classList.add('hidden');
+                unlockIcon.classList.remove('hidden');
+                aspectRatioLock.classList.remove('locked');
+            }
+        }
+        
+        function setPresetSize(width, height) {
+            widthInput.value = width;
+            heightInput.value = height;
+        }
+
+        async function exportImage() {
+            if (!originalImage) { alert('UPLOAD AN IMAGE FIRST!'); return; }
+            const width = parseInt(widthInput.value, 10);
+            const height = parseInt(heightInput.value, 10);
+            const format = formatSelect.value;
+            if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) { alert('INVALID WIDTH OR HEIGHT!'); return; }
+
+            exportButton.disabled = true;
+            exportButton.textContent = 'PROCESSING...';
+            
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(originalImage, 0, 0, width, height);
+            let dataUrl;
+            const mimeType = `image/${format}`;
+
+            if (format === 'jpeg') {
+                const targetSizeInBytes = parseInt(sizeSlider.value, 10) * 1024;
+                const tolerance = 0.1;
+                let quality = 0.9;
+                let minQuality = 0;
+                let maxQuality = 1;
+                let iteration = 0;
+                const maxIterations = 10;
+                while (iteration < maxIterations) {
+                    dataUrl = canvas.toDataURL(mimeType, quality);
+                    const currentSizeInBytes = dataURLtoBlob(dataUrl).size;
+                    if (Math.abs(currentSizeInBytes - targetSizeInBytes) / targetSizeInBytes < tolerance) break;
+                    if (currentSizeInBytes > targetSizeInBytes) { maxQuality = quality; } else { minQuality = quality; }
+                    quality = (minQuality + maxQuality) / 2;
+                    iteration++;
+                }
+            } else {
+                dataUrl = canvas.toDataURL(mimeType);
+            }
+
+            const filename = `resized-image-${width}x${height}.${format}`;
+            downloadLink.href = dataUrl;
+            downloadLink.download = filename;
+            downloadLink.click();
+            exportButton.disabled = false;
+            exportButton.textContent = 'EXPORT IMAGE';
+        }
+        
+        function resetAll() {
+            fileInput.value = null;
+            originalImage = null;
+            imagePreview.src = '';
+            imagePreview.classList.add('hidden');
+            uploadPrompt.classList.remove('hidden');
+            controlsFieldset.disabled = true;
+            resetButton.classList.add('hidden');
+            widthInput.value = '';
+            heightInput.value = '';
+            imageInfo.textContent = '';
+            isAspectRatioLocked = true;
+            updateLockIcon();
+        }
+
+        // Initial state
+        updateLockIcon();
+    </script>
+</body>
+</html>
