@@ -3,503 +3,355 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>線上圖片尺寸調整工具 - 16bit版</title>
+    <title>16-Bit Image Resizer PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --pixel-bg: #000000;
-            --pixel-fg: #FFFFFF;
-            --pixel-border-size: 4px;
-        }
-
         body {
             font-family: 'VT323', monospace;
-            background-color: var(--pixel-bg);
-            color: var(--pixel-fg);
-            font-size: 20px;
-            padding: 1rem;
+            background-color: #000;
+            color: #00FF00; /* Classic green terminal color */
+            text-shadow: 0 0 2px #00FF00;
         }
-
-        * {
-            box-sizing: border-box;
-            border-radius: 0 !important;
+        .container-box {
+            border: 2px solid #00FF00;
+            padding: 20px;
+            box-shadow: 0 0 10px #00FF00;
         }
-        
-        .pixel-container {
-            max-width: 1200px;
-            margin: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 2rem;
+        .title-bar {
+            background-color: #00FF00;
+            color: #000;
+            padding: 5px 10px;
+            font-size: 1.25rem;
+            text-shadow: none;
         }
-
-        .pixel-header {
-            text-align: center;
-            border: var(--pixel-border-size) solid var(--pixel-fg);
-            padding: 1rem;
-            box-shadow: inset 0 0 0 var(--pixel-border-size) var(--pixel-bg), 0 0 0 var(--pixel-border-size) var(--pixel-fg);
+        .content-area {
+            padding-top: 20px;
         }
-
-        .pixel-header h1 {
-            font-size: 2.5rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .pixel-main {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 2rem;
-        }
-
-        @media (min-width: 1024px) {
-            .pixel-main {
-                grid-template-columns: 2fr 1fr;
-            }
-        }
-
-        .pixel-box {
-            border: var(--pixel-border-size) solid var(--pixel-fg);
-            padding: 1.5rem;
-            background-color: var(--pixel-bg);
-        }
-
-        .upload-box {
+        input[type="number"], input[type="file"], select {
+            background-color: #111;
+            border: 1px solid #00FF00;
+            color: #00FF00;
+            padding: 8px;
+            outline: none;
             width: 100%;
-            height: 24rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
+        }
+        input[type="number"]:focus, select:focus {
+            box-shadow: 0 0 5px #00FF00;
+        }
+        .btn, .preset-btn, .file-label {
+            background-color: transparent;
+            border: 2px solid #00FF00;
+            color: #00FF00;
+            padding: 8px 12px;
             cursor: pointer;
-            border: var(--pixel-border-size) dashed var(--pixel-fg);
-            transition: background-color 0.2s;
-        }
-        .upload-box:hover {
-            background-color: #222;
-        }
-        #image-preview {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            image-rendering: pixelated; /* Makes resized previews look sharp */
-        }
-        #image-info {
+            transition: all 0.2s;
             text-align: center;
-            margin-top: 1rem;
-            height: 20px;
         }
-
-        .controls-fieldset {
-            border: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-        .controls-fieldset:disabled {
-            opacity: 0.5;
-            pointer-events: none;
-            filter: grayscale(50%);
-        }
-
-        .control-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-        }
-
-        .btn-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 0.5rem;
-        }
-
-        .btn {
-            font-family: 'VT323', monospace;
-            background-color: var(--pixel-bg);
-            color: var(--pixel-fg);
-            border: var(--pixel-border-size) solid var(--pixel-fg);
-            padding: 0.5rem;
-            font-size: 16px;
-            cursor: pointer;
-            text-align: center;
-            text-transform: uppercase;
-            box-shadow: inset 0 0 0 0 var(--pixel-fg);
-            transition: all 0.1s linear;
-        }
-        .btn:hover:not(:disabled) {
-            background-color: var(--pixel-fg);
-            color: var(--pixel-bg);
-        }
-        .btn:active:not(:disabled) {
-            transform: translateY(2px);
+        .btn:hover, .preset-btn:hover, .file-label:hover {
+            background-color: #00FF00;
+            color: #000;
+            text-shadow: none;
         }
         .btn:disabled {
+            color: #555;
+            border-color: #555;
             cursor: not-allowed;
+            background-color: transparent;
         }
-        
-        .pixel-input, .pixel-select {
+        .preset-btn.active {
+            background-color: #00FF00;
+            color: #000;
+            text-shadow: none;
+        }
+        .preview-box {
+            border: 2px dashed #00FF00;
             width: 100%;
-            background-color: var(--pixel-bg);
-            color: var(--pixel-fg);
-            border: var(--pixel-border-size) solid var(--pixel-fg);
-            padding: 0.5rem;
-            font-family: 'VT323', monospace;
-            font-size: 20px;
+            padding-top: 100%; /* 1:1 aspect ratio */
+            position: relative;
+            background-color: #0a0a0a;
         }
-        
-        .dimension-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .dimension-group .pixel-input {
-            text-align: center;
-        }
-
-        #aspect-ratio-lock {
-            width: 48px;
-            height: 48px;
-            flex-shrink: 0;
-            padding: 4px;
-        }
-        #aspect-ratio-lock svg {
+        .preview-box img {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            stroke: var(--pixel-fg);
+            object-fit: cover;
         }
-        #aspect-ratio-lock.locked {
-             background-color: var(--pixel-fg);
+        .preview-box .placeholder {
+             position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #008f00;
+            font-size: 1.5rem;
         }
-        #aspect-ratio-lock.locked svg {
-             stroke: var(--pixel-bg);
+        .blinking-cursor {
+            animation: blink 1s step-end infinite;
         }
-
-
-        input[type="range"] {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 100%;
-            height: var(--pixel-border-size);
-            background: var(--pixel-fg);
-            outline: none;
-            padding: 0;
-            margin: 0.5rem 0;
+        @keyframes blink {
+            50% { opacity: 0; }
         }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 24px;
-            height: 24px;
-            background: var(--pixel-bg);
-            border: var(--pixel-border-size) solid var(--pixel-fg);
-            cursor: pointer;
+        /* Hide number input arrows */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
         }
-        input[type="range"]::-moz-range-thumb {
-            width: 16px; /* (24px - 2*4px) */
-            height: 16px;
-            background: var(--pixel-bg);
-            border: var(--pixel-border-size) solid var(--pixel-fg);
-            cursor: pointer;
-        }
-        .slider-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 16px;
-        }
-        
-        #export-button {
-            padding: 1rem;
-            font-size: 22px;
-            font-weight: bold;
-        }
-        
-        .hidden {
-            display: none !important;
+        input[type=number] {
+          -moz-appearance: textfield;
         }
     </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
 
-    <div class="pixel-container">
-        <header class="pixel-header">
-            <h1>Image Resizer</h1>
-            <p>-- y2k pixel edition --</p>
-        </header>
+    <div class="max-w-6xl mx-auto container-box">
+        <div class="title-bar">
+            <p>C:\> RESIZE_PRO.EXE</p>
+        </div>
+        <div class="content-area">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-lg">
 
-        <main class="pixel-main">
-            <div class="image-area">
-                <div id="image-preview-container" class="upload-box">
-                    <div id="upload-prompt">
-                        <p>CLICK OR DROP IMAGE HERE</p>
-                        <p style="font-size: 14px;">[NO UPLOAD, ALL LOCAL]</p>
+                <!-- Controls -->
+                <div class="space-y-6">
+                    <!-- Step 1: Upload -->
+                    <div>
+                        <p class="mb-2">> STEP 1: LOAD IMAGE</p>
+                        <label for="image-upload" class="file-label block">UPLOAD_FILE.BAT</label>
+                        <input type="file" id="image-upload" class="hidden" accept="image/*">
+                        <p id="file-name" class="mt-2 h-6 text-green-300"></p>
                     </div>
-                    <img id="image-preview" src="" class="hidden" alt="圖片預覽"/>
-                </div>
-                <input type="file" id="file-input" class="hidden" accept="image/*">
-                <div id="image-info"></div>
-            </div>
 
-            <div class="control-panel pixel-box">
-                <fieldset id="controls-fieldset" class="controls-fieldset" disabled>
+                    <!-- Step 2: Presets -->
+                    <div>
+                        <p class="mb-2">> STEP 2: SELECT PRESET</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button class="preset-btn" data-w="1200" data-h="630">FB POST</button>
+                            <button class="preset-btn" data-w="1080" data-h="1080">IG POST</button>
+                            <button class="preset-btn" data-w="1080" data-h="1920">IG STORY</button>
+                            <button class="preset-btn active" id="custom-btn">CUSTOM</button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Custom Size -->
+                    <div>
+                        <p class="mb-2">> STEP 3: DEFINE DIMENSIONS (PX)</p>
+                        <div class="flex items-center gap-4">
+                            <input type="number" id="width-input" placeholder="WIDTH">
+                            <span>x</span>
+                            <input type="number" id="height-input" placeholder="HEIGHT">
+                        </div>
+                    </div>
+
+                    <!-- Step 4: Output Settings -->
+                    <div>
+                        <p class="mb-2">> STEP 4: OUTPUT SETTINGS</p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="format-select">FORMAT:</label>
+                                <select id="format-select">
+                                    <option value="jpeg">JPEG</option>
+                                    <option value="png">PNG</option>
+                                </select>
+                            </div>
+                            <div id="target-size-container">
+                                <label for="target-size-input">TARGET SIZE (KB):</label>
+                                <input type="number" id="target-size-input" placeholder="e.g. 500">
+                            </div>
+                        </div>
+                    </div>
                     
-                    <div class="control-group">
-                        <label>PRESETS</label>
-                        <div class="btn-group">
-                            <button onclick="setPresetSize(1200, 630)" class="btn">FB POST</button>
-                            <button onclick="setPresetSize(1080, 1080)" class="btn">IG POST</button>
-                            <button onclick="setPresetSize(1080, 1920)" class="btn">IG STORY</button>
+                    <button id="resize-btn" class="btn w-full text-2xl" disabled>
+                        [ GENERATE ]
+                    </button>
+                </div>
+
+                <!-- Preview & Download -->
+                <div class="space-y-4 flex flex-col items-center">
+                    <p class="text-center">> OUTPUT_PREVIEW.LOG</p>
+                    <div class="w-full max-w-md">
+                        <div id="preview-box" class="preview-box">
+                            <div class="placeholder">Awaiting Input...</div>
                         </div>
                     </div>
+                    <div id="result-info" class="text-center h-6"></div>
+                    <a id="download-link" class="btn w-full max-w-md hidden">DOWNLOAD</a>
+                </div>
 
-                    <div class="control-group">
-                        <label>CUSTOM SIZE</label>
-                        <div class="dimension-group">
-                            <input type="number" id="width-input" class="pixel-input" placeholder="W">
-                            <span>X</span>
-                            <input type="number" id="height-input" class="pixel-input" placeholder="H">
-                            <button id="aspect-ratio-lock" class="btn">
-                                <!-- Pixel Lock/Unlock Icon -->
-                                <svg id="lock-icon" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter" shape-rendering="crispEdges">
-                                    <rect x="5" y="11" width="14" height="9"></rect>
-                                    <path d="M8 11V7a4 4 0 014-4 4 4 0 014 4v4"></path>
-                                </svg>
-                                <svg id="unlock-icon" class="hidden" viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter" shape-rendering="crispEdges">
-                                     <rect x="5" y="11" width="14" height="9"></rect>
-                                     <path d="M8 11V7a4 4 0 014-4 4 4 0 014 4"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="format-select">FORMAT</label>
-                        <select id="format-select" class="pixel-select">
-                            <option value="jpeg">JPG</option>
-                            <option value="png">PNG</option>
-                        </select>
-                    </div>
-
-                    <div id="size-control" class="control-group">
-                        <label for="size-slider">TARGET FILE SIZE (JPG ONLY)</label>
-                        <input id="size-slider" type="range" min="100" max="1000" value="500">
-                        <div class="slider-labels">
-                           <span>100KB</span>
-                           <span>TARGET: <span id="size-value">500</span> KB</span>
-                           <span>1000KB</span>
-                        </div>
-                    </div>
-
-                    <div class="control-group">
-                        <button id="export-button" class="btn">EXPORT IMAGE</button>
-                    </div>
-                </fieldset>
-                 <button id="reset-button" class="btn hidden" style="margin-top: 1rem; width: 100%;">RESET</button>
             </div>
-        </main>
+        </div>
+        <p class="mt-4 text-center text-sm">> STATUS: READY<span class="blinking-cursor">_</span></p>
     </div>
 
     <canvas id="canvas" class="hidden"></canvas>
-    <a id="download-link" class="hidden"></a>
 
     <script>
-        // --- 功能完全保持不變，只更動樣式相關的class切換 ---
-        // DOM Elements
-        const fileInput = document.getElementById('file-input');
-        const imagePreviewContainer = document.getElementById('image-preview-container');
-        const uploadPrompt = document.getElementById('upload-prompt');
-        const imagePreview = document.getElementById('image-preview');
-        const imageInfo = document.getElementById('image-info');
-        const controlsFieldset = document.getElementById('controls-fieldset');
-        
+        const imageUpload = document.getElementById('image-upload');
         const widthInput = document.getElementById('width-input');
         const heightInput = document.getElementById('height-input');
-        const aspectRatioLock = document.getElementById('aspect-ratio-lock');
-        const lockIcon = document.getElementById('lock-icon');
-        const unlockIcon = document.getElementById('unlock-icon');
-        
-        const formatSelect = document.getElementById('format-select');
-        const sizeControl = document.getElementById('size-control');
-        const sizeSlider = document.getElementById('size-slider');
-        const sizeValue = document.getElementById('size-value');
-        
-        const exportButton = document.getElementById('export-button');
-        const resetButton = document.getElementById('reset-button');
+        const resizeBtn = document.getElementById('resize-btn');
         const downloadLink = document.getElementById('download-link');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        const fileNameSpan = document.getElementById('file-name');
+        const previewBox = document.getElementById('preview-box');
+        const resultInfo = document.getElementById('result-info');
+        const presetBtns = document.querySelectorAll('.preset-btn');
+        const customBtn = document.getElementById('custom-btn');
+        const formatSelect = document.getElementById('format-select');
+        const targetSizeInput = document.getElementById('target-size-input');
+        const targetSizeContainer = document.getElementById('target-size-container');
 
-        // State
         let originalImage = null;
-        let originalWidth = 0;
-        let originalHeight = 0;
-        let aspectRatio = 1;
-        let isAspectRatioLocked = true;
+        let originalFileName = '';
 
         // --- Event Listeners ---
-        imagePreviewContainer.addEventListener('click', () => fileInput.click());
-        imagePreviewContainer.addEventListener('dragover', (e) => { e.preventDefault(); });
-        imagePreviewContainer.addEventListener('dragleave', (e) => { e.preventDefault(); });
-        imagePreviewContainer.addEventListener('drop', (e) => {
-            e.preventDefault();
-            const files = e.dataTransfer.files;
-            if (files.length > 0) handleFile(files[0]);
-        });
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) handleFile(e.target.files[0]);
-        });
-        widthInput.addEventListener('input', () => {
-            if (isAspectRatioLocked && originalImage) {
-                const newWidth = parseInt(widthInput.value, 10);
-                if (!isNaN(newWidth) && newWidth > 0) {
-                    heightInput.value = Math.round(newWidth / aspectRatio);
+
+        imageUpload.addEventListener('change', handleImageUpload);
+        resizeBtn.addEventListener('click', processImage);
+        
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                presetBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                if (e.target.id !== 'custom-btn') {
+                    widthInput.value = e.target.dataset.w;
+                    heightInput.value = e.target.dataset.h;
                 }
-            }
+            });
         });
-        heightInput.addEventListener('input', () => {
-            if (isAspectRatioLocked && originalImage) {
-                const newHeight = parseInt(heightInput.value, 10);
-                if (!isNaN(newHeight) && newHeight > 0) {
-                    widthInput.value = Math.round(newHeight * aspectRatio);
-                }
-            }
-        });
-        aspectRatioLock.addEventListener('click', () => {
-            isAspectRatioLocked = !isAspectRatioLocked;
-            updateLockIcon();
-        });
+
         formatSelect.addEventListener('change', () => {
-            sizeControl.style.display = formatSelect.value === 'jpeg' ? 'block' : 'none';
+            targetSizeContainer.style.display = formatSelect.value === 'jpeg' ? 'block' : 'none';
         });
-        sizeSlider.addEventListener('input', () => {
-            sizeValue.textContent = sizeSlider.value;
-        });
-        exportButton.addEventListener('click', exportImage);
-        resetButton.addEventListener('click', resetAll);
 
-        // --- Functions ---
-        function dataURLtoBlob(dataurl) {
-            const arr = dataurl.split(',');
-            const mime = arr[0].match(/:(.*?);/)[1];
-            const bstr = atob(arr[1]);
-            let n = bstr.length;
-            const u8arr = new Uint8Array(n);
-            while (n--) { u8arr[n] = bstr.charCodeAt(n); }
-            return new Blob([u8arr], { type: mime });
-        }
+        // --- Core Functions ---
 
-        function handleFile(file) {
-            if (!file.type.startsWith('image/')) { alert('PLEASE SELECT AN IMAGE FILE!'); return; }
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) {
+                fileNameSpan.textContent = 'ERROR: INVALID FILE TYPE';
+                return;
+            }
+
             const reader = new FileReader();
-            reader.onload = (e) => {
-                originalImage = new Image();
-                originalImage.onload = () => {
-                    originalWidth = originalImage.width;
-                    originalHeight = originalImage.height;
-                    aspectRatio = originalWidth / originalHeight;
-                    imagePreview.src = e.target.result;
-                    imagePreview.classList.remove('hidden');
-                    uploadPrompt.classList.add('hidden');
-                    controlsFieldset.disabled = false;
-                    resetButton.classList.remove('hidden');
-                    widthInput.value = originalWidth;
-                    heightInput.value = originalHeight;
-                    imageInfo.textContent = `Original: ${originalWidth}x${originalHeight}px`;
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    originalImage = img;
+                    resizeBtn.disabled = false;
+                    fileNameSpan.textContent = `LOADED: ${file.name}`;
+                    originalFileName = file.name.split('.').slice(0, -1).join('.');
+                    previewBox.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
+                    downloadLink.classList.add('hidden');
+                    resultInfo.textContent = '';
                 };
-                originalImage.src = e.target.result;
+                img.src = event.target.result;
             };
             reader.readAsDataURL(file);
         }
 
-        function updateLockIcon() {
-            if (isAspectRatioLocked) {
-                lockIcon.classList.remove('hidden');
-                unlockIcon.classList.add('hidden');
-                aspectRatioLock.classList.add('locked');
-                if (originalImage) {
-                    aspectRatio = originalWidth / originalHeight;
-                    const currentWidth = parseInt(widthInput.value, 10);
-                    if (!isNaN(currentWidth)) {
-                       heightInput.value = Math.round(currentWidth / aspectRatio);
-                    }
-                }
-            } else {
-                lockIcon.classList.add('hidden');
-                unlockIcon.classList.remove('hidden');
-                aspectRatioLock.classList.remove('locked');
+        async function processImage() {
+            if (!originalImage) {
+                resultInfo.textContent = 'ERROR: NO IMAGE LOADED';
+                return;
             }
-        }
-        
-        function setPresetSize(width, height) {
-            widthInput.value = width;
-            heightInput.value = height;
-        }
 
-        async function exportImage() {
-            if (!originalImage) { alert('UPLOAD AN IMAGE FIRST!'); return; }
-            const width = parseInt(widthInput.value, 10);
-            const height = parseInt(heightInput.value, 10);
+            const targetWidth = parseInt(widthInput.value, 10);
+            const targetHeight = parseInt(heightInput.value, 10);
             const format = formatSelect.value;
-            if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) { alert('INVALID WIDTH OR HEIGHT!'); return; }
+            const targetSizeKB = parseInt(targetSizeInput.value, 10);
 
-            exportButton.disabled = true;
-            exportButton.textContent = 'PROCESSING...';
-            
-            canvas.width = width;
-            canvas.height = height;
-            ctx.drawImage(originalImage, 0, 0, width, height);
-            let dataUrl;
+            if (isNaN(targetWidth) || isNaN(targetHeight) || targetWidth <= 0 || targetHeight <= 0) {
+                resultInfo.textContent = 'ERROR: INVALID DIMENSIONS';
+                return;
+            }
+
+            resizeBtn.disabled = true;
+            resizeBtn.textContent = '[ PROCESSING... ]';
+            resultInfo.textContent = 'Executing...';
+
+            // Draw image to canvas with "cover" logic
+            drawToCanvas(targetWidth, targetHeight);
+
+            let outputBlob;
             const mimeType = `image/${format}`;
 
-            if (format === 'jpeg') {
-                const targetSizeInBytes = parseInt(sizeSlider.value, 10) * 1024;
-                const tolerance = 0.1;
-                let quality = 0.9;
-                let minQuality = 0;
-                let maxQuality = 1;
-                let iteration = 0;
-                const maxIterations = 10;
-                while (iteration < maxIterations) {
-                    dataUrl = canvas.toDataURL(mimeType, quality);
-                    const currentSizeInBytes = dataURLtoBlob(dataUrl).size;
-                    if (Math.abs(currentSizeInBytes - targetSizeInBytes) / targetSizeInBytes < tolerance) break;
-                    if (currentSizeInBytes > targetSizeInBytes) { maxQuality = quality; } else { minQuality = quality; }
-                    quality = (minQuality + maxQuality) / 2;
-                    iteration++;
-                }
+            if (format === 'jpeg' && !isNaN(targetSizeKB) && targetSizeKB > 0) {
+                // Attempt to get blob with target size
+                outputBlob = await getJpegBlobWithTargetSize(canvas, targetSizeKB * 1024);
             } else {
-                dataUrl = canvas.toDataURL(mimeType);
+                // Standard conversion
+                outputBlob = await new Promise(resolve => canvas.toBlob(resolve, mimeType, format === 'jpeg' ? 0.95 : undefined));
             }
 
-            const filename = `resized-image-${width}x${height}.${format}`;
-            downloadLink.href = dataUrl;
-            downloadLink.download = filename;
-            downloadLink.click();
-            exportButton.disabled = false;
-            exportButton.textContent = 'EXPORT IMAGE';
-        }
-        
-        function resetAll() {
-            fileInput.value = null;
-            originalImage = null;
-            imagePreview.src = '';
-            imagePreview.classList.add('hidden');
-            uploadPrompt.classList.remove('hidden');
-            controlsFieldset.disabled = true;
-            resetButton.classList.add('hidden');
-            widthInput.value = '';
-            heightInput.value = '';
-            imageInfo.textContent = '';
-            isAspectRatioLocked = true;
-            updateLockIcon();
+            const objectURL = URL.createObjectURL(outputBlob);
+            const finalSizeKB = (outputBlob.size / 1024).toFixed(2);
+
+            previewBox.innerHTML = `<img src="${objectURL}" alt="Resized Image">`;
+            downloadLink.href = objectURL;
+            downloadLink.download = `${originalFileName}_${targetWidth}x${targetHeight}.${format}`;
+            downloadLink.classList.remove('hidden');
+            resultInfo.textContent = `SUCCESS: ${finalSizeKB} KB`;
+            resizeBtn.disabled = false;
+            resizeBtn.textContent = '[ GENERATE ]';
         }
 
-        // Initial state
-        updateLockIcon();
+        function drawToCanvas(targetWidth, targetHeight) {
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+
+            const srcRatio = originalImage.width / originalImage.height;
+            const targetRatio = targetWidth / targetHeight;
+            let drawWidth, drawHeight, offsetX, offsetY;
+
+            if (srcRatio > targetRatio) {
+                drawHeight = originalImage.height;
+                drawWidth = drawHeight * targetRatio;
+                offsetX = (originalImage.width - drawWidth) / 2;
+                offsetY = 0;
+            } else {
+                drawWidth = originalImage.width;
+                drawHeight = drawWidth / targetRatio;
+                offsetX = 0;
+                offsetY = (originalImage.height - drawHeight) / 2;
+            }
+
+            ctx.drawImage(originalImage, offsetX, offsetY, drawWidth, drawHeight, 0, 0, targetWidth, targetHeight);
+        }
+
+        /**
+         * Uses a binary search approach to find the JPEG quality that results
+         * in a file size closest to the target size.
+         * @param {HTMLCanvasElement} canvasEl - The canvas with the image data.
+         * @param {number} targetSizeBytes - The target file size in bytes.
+         * @returns {Promise<Blob>} A promise that resolves with the final Blob.
+         */
+        async function getJpegBlobWithTargetSize(canvasEl, targetSizeBytes) {
+            let minQuality = 0;
+            let maxQuality = 1;
+            let bestBlob = null;
+
+            // Iterate a few times to find the best quality
+            for (let i = 0; i < 7; i++) {
+                const quality = (minQuality + maxQuality) / 2;
+                const blob = await new Promise(resolve => canvasEl.toBlob(resolve, 'image/jpeg', quality));
+                
+                if (!bestBlob || Math.abs(blob.size - targetSizeBytes) < Math.abs(bestBlob.size - targetSizeBytes)) {
+                    bestBlob = blob;
+                }
+
+                if (blob.size > targetSizeBytes) {
+                    maxQuality = quality;
+                } else {
+                    minQuality = quality;
+                }
+            }
+            return bestBlob;
+        }
     </script>
 </body>
 </html>
